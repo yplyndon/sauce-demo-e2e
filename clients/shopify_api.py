@@ -31,13 +31,18 @@ class ShopifyApi:
         """Run a request and back off / retry while Shopify answers 429 (rate limit)."""
         for attempt in range(self.MAX_RETRIES + 1):
             response = send()
-            if response.status != 429 or attempt == self.MAX_RETRIES:
+            if response.status != 429:
                 return response
+            if attempt == self.MAX_RETRIES:
+                break
             try:
                 delay = float(response.headers.get("retry-after", 0))
             except ValueError:
                 delay = 0
-            time.sleep(min(max(delay, 2 * 2**attempt), 20))
+            time.sleep(min(max(delay, 5 * 2**attempt), 30))
+        from utils.helpers import _skip_blocked  # still rate-limited: environment issue, not a defect
+
+        _skip_blocked()
         return response
 
     def get(self, path: str, **kwargs: Any) -> APIResponse:

@@ -13,7 +13,7 @@ pipeline {
       }
     }
     stage('Test') {
-      steps { sh 'pytest -m ${SUITE} --browser ${BROWSER} -n 4' }
+      steps { sh 'PACING_SECONDS=2 pytest -m ${SUITE} --browser ${BROWSER}' }
     }
   }
   post {

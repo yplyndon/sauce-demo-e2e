@@ -7,10 +7,23 @@ on:
   schedule:
     - cron: "0 1 * * *"   # nightly regression
   workflow_dispatch:
+    inputs:
+      browsers:
+        description: "Regression browsers (JSON array)"
+        default: '["chromium"]'
+
+# Never run two workflows against the shared demo store at the same time
+concurrency:
+  group: sauce-demo-store
+  cancel-in-progress: false
+
+env:
+  PACING_SECONDS: "2"   # pause after each test so Shopify does not rate-limit shared CI IPs
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,7 +32,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: playwright install --with-deps chromium
-      - run: pytest -m smoke -n 2
+      - run: pytest -m smoke          # sequential on purpose: no -n
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -29,10 +42,12 @@ jobs:
   regression:
     needs: smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
+      max-parallel: 1          # browsers run one after another, never together
       matrix:
-        browser: [chromium, firefox, webkit]
+        browser: ${{ fromJSON(github.event.inputs.browsers || '["chromium"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,7 +56,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: playwright install --with-deps ${{ matrix.browser }}
-      - run: pytest -m regression --browser ${{ matrix.browser }} -n 4
+      - run: pytest -m regression --browser ${{ matrix.browser }}   # sequential: no -n
       - uses: actions/upload-artifact@v4
         if: always()
         with:
