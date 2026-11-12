@@ -1,0 +1,9 @@
+{
+  "currency_code": "GBP",
+  "currency_symbol": "£",
+  "featured_products": [
+    {"handle": "grey-jacket",  "title": "Grey jacket",  "price": "55.00"},
+    {"handle": "noir-jacket",  "title": "Noir jacket",  "price": "60.00"},
+    {"handle": "striped-top",  "title": "Striped top",  "price": "50.00"}
+  ]
+}
